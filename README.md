@@ -109,3 +109,28 @@ cependant comme nous ne contrôlons pas les arguments de la fonction printf nous
 
 # flag 04
 
+address of m : 0x08049810
+valeur visée de m : 0x01025544
+
+./level4
+AAAA %x %x %x %x %x %x %x %x %x %x %x %x
+AAAA 1246b0 bffffcb4 2dfff4 0 0 bffffc78 804848d bffffa70 200 2e0ac0 1257d0 41414141
+
+le payload commence à la position 12 de la stack
+en divisant l'écriture de m en deux (0x0102 et 0x5544) on peut faire deux écritures de 2 bytes chacune avec %hn pour écrire sur l'adresse de m
+
+le payload commence donc par les adresses de m (0x08049810 et 0x08049812)
+suivi de l'éciture de 0x5544 (21828) - 8 pour les 4 * 2 bytes des adresses charactères avec le format %21820x
+écrites à la première adresse de m (0x08049810) avec %12$hn
+par la suite pour écrire 0x0102 nous devons augmenter le compteur de charactère de printf pour faire en sorte que les 4 derniers bytes du compteur
+reviennent à 0 ("overflow" 4 bytes)
+pour ce faire il nous suffit d'imprimer 43966 charactères (65535 (0xffff) +1 (overflow 4 bytes) - 21828 (0x5544) + 258 (0x102)) avec le format %43966x
+et d'écrire cette valeur à la deuxième adresse de m (0x08049812) avec %13$hn
+
+(python exploit.py; cat) | ./level4
+
+## flag : 0f99ba5e9c446258a69b290407a6c60859e9c2d25b26575cafc9ae6d75e9456a
+
+# flag 05
+
+
