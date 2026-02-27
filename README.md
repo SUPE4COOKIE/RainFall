@@ -248,4 +248,11 @@ address of the m function we need to call to print the flag : 0x080484f4
 
 # flag 08
 
+auth <space>
+service <8 char>
+login
+
+
+
+# flag : c542e581c5ba5162a85f767996e3247ed619ef6c6f7b76a59435545dc6259f8a
 
