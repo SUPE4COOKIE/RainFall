@@ -396,7 +396,7 @@ On ne peut donc pas essayer de dépasser avec auth.
 Puis on remarque que "auth " et "service " sont tous les deux des mallocs.
 Donc on peut utiliser ça pour mettre auth + 32 à une valeur différente de 0.
 Vu que malloc prend un espace de 16 entre chaque allocation (pour les informations de taille allouées etc.), on n'a plus qu'à mettre 16 caractères (qui vont être dup) pour que auth + 32 ne soit plus à 0.
-
+En gros, comme le pointeur de service démarre exactement à auth + 16, le 16ème caractère de notre chaîne tombera pile sur la case auth + 32.
 
 ./level8
 (nil), (nil)
@@ -405,7 +405,7 @@ Vu que malloc prend un espace de 16 entre chaque allocation (pour les informatio
 "service 1234567890123456"       <- 16 char
 0x804a008, 0x804a018
 "login"
-$           <- Root access
+$           <- Flag level9 access
 
 
 
