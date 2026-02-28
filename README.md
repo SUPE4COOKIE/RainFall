@@ -408,7 +408,66 @@ En gros, comme le pointeur de service démarre exactement à auth + 16, le 16èm
 $           <- Flag level9 access
 
 
+## flag : c542e581c5ba5162a85f767996e3247ed619ef6c6f7b76a59435545dc6259f8a
 
 
-# flag : c542e581c5ba5162a85f767996e3247ed619ef6c6f7b76a59435545dc6259f8a
+# flag 09
+```c
+void main(int param_1,int param_2)
+
+{
+  N *this;
+  N *this_00;
+  
+  if (param_1 < 2) {
+                    /* WARNING: Subroutine does not return */
+    _exit(1);
+  }
+  this = operator.new(0x6c);
+  N::N(this,5);
+  this_00 = operator.new(0x6c);
+  N::N(this_00,6);
+  N::setAnnotation(this,*(char **)(param_2 + 4));
+  (*(code *)**(undefined4 **)this_00)(this_00,this);
+  return;
+}
+```
+
+```c
+void __thiscall N::setAnnotation(N *this,char *param_1)
+
+{
+  size_t __n;
+  
+  __n = strlen(param_1);
+  memcpy(this + 4,param_1,__n);
+  return;
+}
+```
+dans la heap les 2 objets this et this_00 sont representés comme ceci :
+
+```this [vtable address (4 bytes)] [int (4 bytes)] [alloc 104 bytes]```
+
+```this_00 [vtable address (4 bytes)] [int (4 bytes)] [alloc 104 bytes]```
+
+comme nous pouvons le voir dans setAnnotation la fonction memcpy ne vérifie pas la taille de ce qui est écrit dans this + 4
+(this + 4 correspond à la partie données de l'objet). vu que this est au dessus de this_00 dans la heap, en écrivant plus de 104 bytes dans this + 4, on peut écraser la vtable de this_00 et ainsi faire pointer la vtable de this_00 vers une adresse de notre choix pour exécuter du code arbitraire lors de l'appel de la fonction membre virtuelle de this_00
+
+pour ce faire nous avons récupéré un "Shellcode"[https://shell-storm.org/shellcode/files/shellcode-827.html] qui nous permettra d'executer
+un shell.
+
+le payload consiste en :
+[l'addresse de this + 8 (pointe sur la string après cette addresse)] [shellcode] [padding pour remplir les 108 - 4 (adresse) - len(shellcode)] [adresse de this (pour écraser la vtable de this_00)]
+
+ainsi lors de l'instruction (*(code *)**(undefined4 **)this_00)(this_00,this);
+la "vtable" va correspondre à l'adresse de fin du payload
+qui pointe sur l'adresse de début du payload
+qui elle correspond au début du shellcode (this + 4 (vtable de this) + 4 (début du payload et l'adresse elle même) -> début shellcode)
+
+le shellcode s'exécutera et nous donnera un shell pour lire le flag dans /home/user/bonus0/.pass
+
+## flag f3f0004b6f364cb5a4147e9ef827fa922a4861408845c26b6971ad770d906728
+
+# bonus 0
+
 
