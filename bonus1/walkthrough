@@ -14,7 +14,7 @@
 - Analyse dynamique :
 	- Pour écraser EIP avec l'adresse du `execl`, il nous faut un padding de `56` octets (40 de buffer + variables + alignement `esp` + ancien `ebp`).
 	- Pour écrire juste au-dessus (les 4 octets de `EIP`), on veut que `memcpy` copie exactement `60` octets.
-	- La multiplication dans `memcpy` : `valeur * 4 = 60` mod $2^{32}$. On calcule la valeur `-2147483633` (ou `0x8000000F` en hexadécimal).
+	- La multiplication dans `memcpy` : `valeur * 4 = 60`. On calcule la valeur `-2147483633` (ou `0x8000000F` en hexadécimal).
 	- `0x8000000F * 4 = 0x20000003C`. Le dépassement 32 bits (integer overflow) tronque le bit de poids fort et garde `0x3C`, soit `60` !
 - Vulnérabilité : integer underflow contournant la vérification, menant à un overflow contrôlé de la taille passée à `memcpy`.
 
