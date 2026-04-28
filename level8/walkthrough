@@ -1,0 +1,36 @@
+# Walkthrough — level8 (flag08)
+
+## 1) Contexte & objectifs
+- Objectif : déclencher `system("/bin/sh")` en faisant en sorte que `*(int *)(auth + 32) != 0`.
+- Fichier / binaire : `level8`.
+- Contexte : le programme est interactif, il expose 4 commandes (`auth`, `reset`, `service`, `login`) et affiche à chaque tour les adresses des pointeurs globaux `auth` et `service`.
+
+## 2) Analyse & vulnérabilité
+- Analyse statique :
+	- La commande `auth ` alloue un bloc de 4 octets avec `malloc(4)`, puis y copie la saisie si elle fait 30 caractères ou moins.
+	- La commande `service` alloue une chaîne avec `strdup` (équivalent d'un `malloc` suivi d'un `strcpy`) et stocke le pointeur dans `service`.
+	- La commande `login` vérifie `*(int *)(auth + 32) == 0` : si la valeur vaut zéro, elle demande un mot de passe ; sinon elle lance le shell.
+- Analyse dynamique :
+	- On observe que `auth` et `service` sont deux allocations consécutives sur la heap.
+	- Sur 32 bits, `malloc` réserve au minimum 16 octets par bloc (8 octets de header interne + données alignées), donc même un `malloc(4)` occupe 16 octets.
+	- Le bloc de `service` commence donc exactement à `auth + 16`.
+	- Si la chaîne passée à `service` fait au moins 17 octets, son octet à l'index 16 (`service[16]`) tombe pile sur `auth + 32`.
+- Vulnérabilité : manipulation de la disposition de la heap pour écrire à une adresse précise sans overflow direct.
+
+## 3) Exploitation & flag
+- Étapes :
+	- Lancer le programme et taper `auth A` pour allouer `auth` sur la heap.
+	- Taper `service` suivi d'au moins 16 caractères pour que `strdup` alloue juste après `auth` et que `service[16]` écrive une valeur non-nulle sur `auth + 32`.
+	- Taper `login` : la condition est fausse, le shell s'ouvre.
+- Commandes utilisées :
+
+```
+./level8
+(nil), (nil)
+auth A
+0x804a008, (nil)
+service 1234567890123456
+0x804a008, 0x804a018
+login
+$
+```

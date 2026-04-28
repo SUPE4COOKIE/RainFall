@@ -1,0 +1,25 @@
+# Walkthrough — level9 (flag09)
+
+## 1) Contexte & objectifs
+- Objectif : détourner l’appel de l’opérateur sur `obj2` pour exécuter un shellcode.
+- Fichier / binaire : `level9`.
+- Contexte : `setAnnotation` copie sans limite et permet d’écraser des données de l’objet suivant sur la heap.
+
+## 2) Analyse & vulnérabilité
+- Analyse statique :
+	- `setAnnotation` fait un `memcpy` de taille `strlen` sans vérification.
+	- Deux objets `N` sont alloués successivement sur le heap.
+	- Les objets sont représentés comme : `[vtable (4)] [int (4)] [alloc 104]`.
+- Vulnérabilité : en dépassant les 104 octets de `annotation`, on écrase la vtable de `obj2`.
+
+## 3) Exploitation & flag
+- Étapes :
+	- Utiliser un shellcode et construire un payload pour écraser la vtable.
+	- récupération de l'adresse de alloc dans obj1 grâce à ltrace:
+	```sh
+	ltrace ./level9 co
+	memcpy(0x0804a00c, "co", 2)
+	```
+	- Payload : `[adresse de alloc obj1 + 4 (pointe sur la string de obj1 + 4 (début du shellcode))] [shellcode] [padding pour 104 - len(shellcode)] [adresse de obj1 (overwrite la vtable de obj2)]`.
+	- Lors de `*obj2 + *obj1`, traduit en appel de fonction avec l'overload + ```(*(code *)**(undefined4 **)this_00)(this_00,this);``` or vu que l'adresse de la vtable a été réecrite, obj1 +8 est executé qui correspond donc par conséquent à notre shellcode
+- Résultat : un shell est obtenu pour lire le flag dans `/home/user/bonus0/.pass`.

