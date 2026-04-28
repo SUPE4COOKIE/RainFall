@@ -1,0 +1,46 @@
+#include <cstring>
+#include <unistd.h>
+
+class N {
+public:
+    char annotation[100];
+    int value;
+
+    N(int v) {
+        this->value = v;
+    }
+    
+    virtual int operator+(N &other) {
+        return other.value + this->value;
+    }
+
+    virtual int operator-(N &other) {
+        return this->value - other.value;
+    }
+
+    void setAnnotation(char *param_1) {
+        size_t n = strlen(param_1);
+        memcpy(this->annotation, param_1, n);
+    }
+};
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        _exit(1);
+    }
+
+    N *obj1 = new N(5);
+    N *obj2 = new N(6);
+
+    obj1->setAnnotation(argv[1]);
+    
+    *obj2 + *obj1;
+    /*
+    converted to a function call because of the operator+ overloading
+    (*(code *)**(undefined4 **)this_00)(this_00,this);
+    */
+
+    return 0;
+}
+
+

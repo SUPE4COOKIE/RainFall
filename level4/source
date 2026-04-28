@@ -1,0 +1,27 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+void main(void)
+
+{
+  n();
+  return;
+}
+
+void p(char *str)
+{
+    printf(str);
+}
+
+void n(void)
+{
+    char buffer[520];
+    int m;
+
+    fgets(buffer, 512, stdin);
+    p(buffer);
+
+    if (m == 0x1025544) { // 16930116
+        system("/bin/cat /home/user/level5/.pass");
+    }
+}

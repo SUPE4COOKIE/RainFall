@@ -1,0 +1,30 @@
+# Prerequis - Ret2LibC
+- Le but : rediriger l’exécution vers `system` dans libc et lui passer la chaîne `"/bin/sh"`.
+- Comment ça fonctionne : au lieu d’injecter du code, on s’appuie sur la libc déjà chargée en mémoire. On récupère l’adresse de `system` et celle de la chaîne `"/bin/sh"`, puis on construit un payload qui place ces adresses sur la pile. L’exécution est redirigée vers `system`, qui reçoit `"/bin/sh"` comme argument, ce qui ouvre un shell.
+
+
+# Walkthrough — level2 (flag02)
+
+## 1) Contexte & objectifs
+- Objectif : obtenir un shell via `system("/bin/sh")`.
+- Fichier / binaire : `level2`.
+- Contexte : utiliser une attaque ret2libc pour contourner la protection contre l’écrasement de l’adresse de retour.
+
+## 2) Analyse & vulnérabilité
+- Analyse statique :
+	- Besoin d’une cible dans libc (`system`) et d’une chaîne `"/bin/sh"`.
+- Analyse dynamique :
+	- Dans gdb : récupération de l’adresse de `system`.
+	- `info proc map` pour l’adresse de base de libc.
+	- `find ... "/bin/sh"` pour localiser la chaîne dans libc.
+- Vulnérabilité : overflow permettant de rediriger l’exécution vers libc (ret2libc).
+
+## 3) Exploitation & flag
+- Étapes :
+	- Trouver l’adresse de `system` et `"/bin/sh"`
+	- Construire un payload ret2libc et l’envoyer au binaire.
+- Commandes utilisées :
+	- `gdb`, `b main`, `r`, `p system`.
+	- `info proc map`.
+	- `find 0xb7e2c000, +99999999, "/bin/sh"` puis `x/s 0xb7f8cc58`.
+	- `(python exploit.py; cat) | ./level2`.

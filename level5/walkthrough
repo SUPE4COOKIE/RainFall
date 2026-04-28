@@ -1,0 +1,25 @@
+# Walkthrough — level5 (flag05)
+
+## 1) Contexte & objectifs
+- Objectif : comprendre le flux dans `n` et repérer les adresses utiles liées à `exit`.
+- Fichier / binaire : `level5`.
+- Contexte : analyse via gdb (breakpoints + désassemblage).
+
+## 2) Analyse & vulnérabilité
+- Analyse dynamique :
+	- Breakpoint sur `n` puis désassemblage complet.
+	- `n` lit l’entrée (`fgets`), passe notre buffer à `printf`, puis appelle `exit`.
+	- Dans `exit@plt`, on observe le saut indirect vers l’entrée GOT à `0x8049838`.
+
+## 3) Exploitation & flag
+- Étapes :
+	- Poser un breakpoint sur `n` et lancer le programme.
+	- Désassembler `n` et `exit@plt`.
+	- Noter l’adresse `0x8049838` (entrée GOT d’`exit`).
+- Commandes utilisées :
+	- `gdb` puis `b n`, `r`.
+	- `disassemble` sur `n`.
+	- `disassemble 0x80483d0` et `x 0x8049838`.
+
+
+Il manque des informations, je sais plus comment on exploit au final.

@@ -1,0 +1,26 @@
+# Walkthrough — level4 (flag04)
+
+## 1) Contexte & objectifs
+- Objectif : écrire la valeur `0x01025544` dans `m` pour la condition `if (m == 0x1025544)` et déclencher `system("/bin/cat /home/user/level5/.pass")`.
+- Fichier / binaire : `level4`.
+- Contexte : format string permettant des écritures `%hn`.
+
+## 2) Analyse & vulnérabilité
+- Analyse statique :
+	- Adresse de `m` : `0x08049810`.
+	- Valeur visée : `0x01025544`.
+- Analyse dynamique :
+	- On envoie `AAAA %x %x %x %x %x %x %x %x %x %x %x %x` et on repère `41414141` dans la sortie.
+	- `41414141` apparaît en 12e position, donc le payload commence à la position 12 de la stack.
+- Vulnérabilité : format string pour écrire en mémoire via `%hn`.
+
+## 3) Exploitation & flag
+- Étapes :
+	- Placer `0x08049810` et `0x08049812` au début du payload.
+	- Syntaxe : `%13$hn` signifie « écrire un `short` (2 octets) à l’adresse pointée par le 13e argument de `printf` ».
+	- Écrire `0x5544` (21828) via `%12$hn` en imprimant `21820` caractères : `21828 - 8` (les 8 octets des deux adresses déjà imprimés).
+	- Écrire `0x0102` via `%13$hn` après un overflow : on force le compteur à repasser par `0x0000`, donc `65535 + 1 - 21828 + 258 = 43966` caractères.
+	- Lancer le binaire avec le payload final.
+- Commandes utilisées :
+	- `./level4` puis `AAAA %x %x %x %x %x %x %x %x %x %x %x %x`.
+	- `(python exploit.py; cat) | ./level4`.

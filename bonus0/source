@@ -1,0 +1,40 @@
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
+void p(char *dest, const char *msg) {
+    char buf[4096];
+    
+    puts(msg);
+    read(0, buf, 4096);
+    
+    char *nl = strchr(buf, '\n');
+    *nl = '\0';
+    
+    strncpy(dest, buf, 20);
+}
+
+void pp(char *dest) {
+    char buf1[20];
+    char buf2[20];
+    
+    p(buf1, " - ");
+    p(buf2, " - ");
+    
+    strcpy(dest, buf1);
+    
+    int len = strlen(dest);
+    dest[len] = ' ';
+    dest[len + 1] = '\0';
+    
+    strcat(dest, buf2);
+}
+
+int main(void) {
+    char str[54];
+    
+    pp(str);
+    puts(str);
+    
+    return 0;
+}

@@ -1,0 +1,36 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+int main(int argc, char **argv) {
+    char buffer1[65];
+    char local_57;
+    char buffer2[66];
+    FILE *f;
+    
+    f = fopen("/home/user/end/.pass", "r");
+    
+    memset(buffer1, 0, 132);
+    
+    if (f == NULL || argc != 2) {
+        return -1;
+    }
+    
+    fread(buffer1, 1, 66, f);
+    local_57 = '\0';
+    
+    int index = atoi(argv[1]);
+    buffer1[index] = '\0';
+    
+    fread(buffer2, 1, 65, f);
+    fclose(f);
+    
+    if (strcmp(buffer1, argv[1]) == 0) {
+        execl("/bin/sh", "sh", NULL);
+    } else {
+        puts(buffer2);
+    }
+    
+    return 0;
+}

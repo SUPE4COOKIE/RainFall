@@ -1,0 +1,23 @@
+# Walkthrough — level6 (flag06)
+
+## 1) Contexte & objectifs
+- Objectif : rediriger l’appel du pointeur de fonction vers `n`.
+- Fichier / binaire : `level6`.
+- Contexte : deux `malloc` et un `strcpy` permettent d’écraser un pointeur de fonction.
+
+## 2) Analyse & vulnérabilité
+- Analyse statique :
+	- Adresse de `n` : `0x08048454`.
+	- Le code écrit `*puVar1 = m` puis appelle `(*(code *)*puVar1)()`.
+- Analyse dynamique :
+	- Le `strcpy` copie l’argument dans le buffer de 0x40.
+	- Dépassement possible jusque dans le chunk suivant.
+- Vulnérabilité : overflow pour écraser `*puVar1` avec l’adresse de `n`.
+
+## 3) Exploitation & flag
+- Étapes :
+	- Envoyer `A * 72` pour remplir le buffer (64) + l’en-tête du chunk suivant (8).
+	- Écrire ensuite l’adresse de `n` (`0x08048454`) pour remplacer `*puVar1`.
+	- L’appel indirect exécute `n`.
+- Commandes utilisées :
+	- `./level6 $(python -c 'print(("A" * 72) + "\x54\x84\x04\x08")') 1`.

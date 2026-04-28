@@ -75,9 +75,6 @@ x/s 0xb7f8cc58
 ## flag : 492deb0e7d14c4b5695173cca843c4384fe52d0857c2b0718e1a521a4d33ec02
 
 # flag 03
-export VALGRIND_LIB=/tmp/valgrind_local/libexec/valgrind
-/tmp/valgrind_local/bin/valgrind
-
 
 void v(void)
 

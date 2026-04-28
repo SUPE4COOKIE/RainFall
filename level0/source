@@ -1,0 +1,26 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+
+int main(int argc, char **argv) {
+	int num = atoi(argv[1]);
+	if (num == 423) { // answer is 423
+		char *exec_args[2];
+		exec_args[0] = strdup("/bin/sh");
+		exec_args[1] = NULL;
+		
+		gid_t egid = getegid();
+		uid_t euid = geteuid();
+		
+		setresgid(egid, egid, egid);
+		setresuid(euid, euid, euid);
+		
+		execv("/bin/sh", exec_args);
+	} else {
+		fwrite("No !\n", 1, 5, stderr);
+	}
+	
+	return 0;
+}
