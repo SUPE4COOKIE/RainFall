@@ -1,25 +1,28 @@
 # Walkthrough — bonus1
 
 ## 1) Contexte & objectifs
-- Objectif : contourner la vérification et déclencher `execl("/bin/sh", ...)`.
+- Objectif : exploiter un INT underflow pour déclencher un shell `execl("/bin/sh")` present dans le bin.
 - Fichier / binaire : `bonus1`.
-- Contexte : `memcpy` copie `local_14 * 4` octets dans un buffer de 40.
+- Contexte : le binaire reçoit un entier (via `atoi`) et une string (copiée par `memcpy`).
 
 ## 2) Analyse & vulnérabilité
 - Analyse statique :
-	- Le programme prend un int (`local_14`) et une chaîne.
-	- Si `local_14 < 10`, il copie `local_14 * 4` octets dans `local_3c[40]`.
-	- Si `local_14 == 0x574f4c46`, `execl` est appelé.
+	- `main` teste si l'entrée INT est `< 10` (`if (local_14 < 10)`).
+	- Ensuite, `memcpy` copie `argv[2]` dans un buffer `local_3c` de 40 octets, avec une taille de `local_14 * 4`.
+	- `local_14` est évalué de façon signée dans le `if`, ce qui permet de passer un nombre négatif.
+	- Dans `memcpy`, le 3ème argument est un `size_t` (non-signé). Un entier négatif devient un nombre gigantesque.
 - Analyse dynamique :
-	- Un int négatif est casté en `size_t` dans `memcpy`.
-- Vulnérabilité : overflow du buffer via un `local_14` négatif.
+	- Pour écraser EIP avec l'adresse du `execl`, il nous faut un padding de `56` octets (40 de buffer + variables + alignement `esp` + ancien `ebp`).
+	- Pour écrire juste au-dessus (les 4 octets de `EIP`), on veut que `memcpy` copie exactement `60` octets.
+	- La multiplication dans `memcpy` : `valeur * 4 = 60` mod $2^{32}$. On calcule la valeur `-2147483633` (ou `0x8000000F` en hexadécimal).
+	- `0x8000000F * 4 = 0x20000003C`. Le dépassement 32 bits (integer overflow) tronque le bit de poids fort et garde `0x3C`, soit `60` !
+- Vulnérabilité : integer underflow contournant la vérification, menant à un overflow contrôlé de la taille passée à `memcpy`.
 
 ## 3) Exploitation & flag
 - Étapes :
-	- Utiliser un int négatif pour provoquer un gros `memcpy`.
-	- Padding nécessaire pour atteindre l’EIP : `56` octets.
-	- Calcul : `INT_MAX - (56 + 4 / 4) = -2147483633`.
-	- Construire l’argument 2 : `"A" * 56 + adresse de execl`.
+	- Trouver l'adresse de déclenchement du shell `execl` dans le binaire (`0x08048482`).
+	- Lancer le programme avec `-2147483633` comme premier argument.
+	- Créer un padding de 56 caractères ("A") et y concaténer l'adresse de retour `0x08048482` comme second argument.
 - Commandes utilisées :
-	- `./bonus1 -2147483633 $(python -c 'print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + "\x82\x84\x04\x08")')`.
-- Flag : `579bd19263eb8655e4cf7b742d75edf8c38226925d78db8163506f5191825245`.
+	- `./bonus1 -2147483633 $(python -c 'print("A"*56 + "\x82\x84\x04\x08")')`
+	- `cat /home/user/bonus2/.pass`

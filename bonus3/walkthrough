@@ -1,0 +1,28 @@
+# Walkthrough — bonus3
+
+## 1) Contexte & objectifs
+- Objectif : Exploiter une vulnérabilité de logique dans la lecture d'un fichier et la comparaison d'une chaîne pour obtenir un shell `execl("/bin/sh")`.
+- Fichier / binaire : `bonus3`.
+- Contexte : Le binaire ouvre et lit le fichier `/home/user/end/.pass`, met son contenu en mémoire, et compare la valeur à notre argument.
+
+## 2) Analyse & vulnérabilité
+- Analyse statique :
+	- Le binaire place le flag dans `buffer_65`.
+	- Il utilise `atoi(argv[1])` pour récupérer un entier et place un octet nul (`\0`) dans `buffer_65` à l'index obtenu : `buffer_65[atoi(argv[1])] = '\0';`.
+	- Ensuite, il fait `strcmp(buffer_65, argv[1])` et déclenche le shell si le résultat est `0`.
+- Analyse dynamique :
+	- Comment faire pour que `buffer_65` (qui contient un flag inconnu) soit égal à notre entrée `argv[1]` ?
+	- Notre argument subit une conversion entière (`atoi`) puis une comparaison de chaînes (`strcmp`).
+	- Si on passe une chaîne vide `""` comme argument, `atoi("")` retourne `0`.
+	- Ainsi, il placera l'octet nul au tout début du buffer : `buffer_65[0] = '\0';`.
+	- `buffer_65` devient alors une chaîne vide. Lors de la comparaison `strcmp(buffer_65, argv[1])`, on compare `""` avec `""`, ce qui renvoie bien `0`.
+- Vulnérabilité : Troncation de la mémoire arbitraire via le détournement de l'index de fin de chaîne, couplée à une entrée vide.
+
+## 3) Exploitation & flag
+- Étapes :
+	- Appeler `bonus3` avec l'argument `""` (chaîne vide).
+	- Cela ouvre un shell (l'utilisateur devient `end`).
+	- Récupérer le flag de fin.
+- Commandes utilisées :
+	- `./bonus3 ""`
+	- `cat /home/user/end/.pass`
