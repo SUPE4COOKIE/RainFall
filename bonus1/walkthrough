@@ -1,7 +1,7 @@
 # Walkthrough — bonus1
 
 ## 1) Contexte & objectifs
-- Objectif : exploiter un INT underflow pour déclencher un shell `execl("/bin/sh")` present dans le bin.
+- Objectif : exploiter un integer overflow sur la conversion en `size_t` pour déclencher un shell `execl("/bin/sh")` present dans le bin.
 - Fichier / binaire : `bonus1`.
 - Contexte : le binaire reçoit un entier (via `atoi`) et une string (copiée par `memcpy`).
 
@@ -12,7 +12,7 @@
 	- `local_14` est évalué de façon signée dans le `if`, ce qui permet de passer un nombre négatif.
 	- Dans `memcpy`, le 3ème argument est un `size_t` (non-signé). Un entier négatif devient un nombre gigantesque.
 - Analyse dynamique :
-	- Pour écraser EIP avec l'adresse du `execl`, il nous faut un padding de `56` octets (40 de buffer + variables + alignement `esp` + ancien `ebp`).
+	- Pour écraser EIP avec l'adresse du `execl`, il nous faut un padding de `56` octets : `40` (buffer) + `4` (valeur retournée par `atoi`) + `8` (alignement `esp`, `0xfffffff0`) + `4` (ancien `ebp`).
 	- Pour écrire juste au-dessus (les 4 octets de `EIP`), on veut que `memcpy` copie exactement `60` octets.
 	- La multiplication dans `memcpy` : `valeur * 4 = 60`. On calcule la valeur `-2147483633` (ou `0x8000000F` en hexadécimal).
 	- `0x8000000F * 4 = 0x20000003C`. Le dépassement 32 bits (integer overflow) tronque le bit de poids fort et garde `0x3C`, soit `60` !

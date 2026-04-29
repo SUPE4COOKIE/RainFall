@@ -17,7 +17,7 @@
 ## 3) Exploitation & flag
 - Étapes :
 	- Placer `0x08049810` et `0x08049812` au début du payload.
-	- Syntaxe : `%13$hn` signifie « écrire un `short` (2 octets) à l’adresse pointée par le 13e argument de `printf` ».
+	- Syntaxe : `%12$hn` signifie « écrire un `short` (2 octets) à l’adresse pointée par le 12e argument de `printf` » ; `%13$hn` fait la même chose pour le 13e argument.
 	- Écrire `0x5544` (21828) via `%12$hn` en imprimant `21820` caractères : `21828 - 8` (les 8 octets des deux adresses déjà imprimés).
 	- Écrire `0x0102` via `%13$hn` après un overflow : on force le compteur à repasser par `0x0000`, donc `65535 + 1 - 21828 + 258 = 43966` caractères.
 	- Lancer le binaire avec le payload final.

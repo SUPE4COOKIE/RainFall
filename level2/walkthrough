@@ -12,17 +12,26 @@
 
 ## 2) Analyse & vulnérabilité
 - Analyse statique :
-	- Besoin d’une cible dans libc (`system`) et d’une chaîne `"/bin/sh"`.
+	- `p` stocke l’adresse de retour dans une variable locale `ret_addr` via `__builtin_return_address(0)`, puis lit l’entrée avec `gets` (overflow possible), et vérifie ensuite : `if (ret_addr & 0xb0000000 == 0xb0000000) → _exit(1)`.
+	- La variable `ret_addr` est stockée sur la stack entre le buffer et l’adresse de retour réelle. `gets` peut donc l’écraser.
+	- Si on mettait directement l’adresse de `system` (0xb7...) à cet emplacement, le check échouerait et le programme quitterait.
+	- La solution : écrire une adresse valide du binaire (0x08...) à l’emplacement de `ret_addr` pour passer le check, puis placer l’adresse de `system` comme vraie adresse de retour juste après.
 - Analyse dynamique :
 	- Dans gdb : récupération de l’adresse de `system`.
 	- `info proc map` pour l’adresse de base de libc.
 	- `find ... "/bin/sh"` pour localiser la chaîne dans libc.
-- Vulnérabilité : overflow permettant de rediriger l’exécution vers libc (ret2libc).
+- Vulnérabilité : overflow permettant de rediriger l’exécution vers libc (ret2libc), avec contournement du check via l’écrasement de la variable locale `ret_addr`.
 
 ## 3) Exploitation & flag
 - Étapes :
-	- Trouver l’adresse de `system` et `"/bin/sh"`
-	- Construire un payload ret2libc et l’envoyer au binaire.
+	- Trouver l’adresse de `system` (`0xb7e6b060`) et de `"/bin/sh"` (`0xb7f8cc58`) dans la libc.
+	- Construire le payload :
+		- `"A" * 76` : remplit le buffer.
+		- `"B" * 4` : écrase le saved EBP.
+		- `0x0804853e` : écrase `ret_addr` (variable locale) avec une adresse binaire valide → le check `& 0xb0000000` vaut 0 → on ne quitte pas.
+		- `0xb7e6b060` : adresse de `system` → adresse de retour réelle de `p`.
+		- `0xdeadbeef` : fausse adresse de retour de `system` (non utilisée).
+		- `0xb7f8cc58` : adresse de `"/bin/sh"` → argument de `system`.
 - Commandes utilisées :
 	- `gdb`, `b main`, `r`, `p system`.
 	- `info proc map`.

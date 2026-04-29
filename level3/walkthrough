@@ -10,7 +10,7 @@
 	- La variable globale `m` est à l’adresse `0x804988c`.
 	- Condition : `m == 0x40` (64).
 - Analyse dynamique :
-	- Avec `%x` (Qui print l'adresse des arguments de printf, quand aucun argument, print la stack), on repère la position du buffer sur la stack.
+	- Avec `%x` (qui print les valeurs de la stack 4 octets par 4 octets, en hexadécimal), on repère la position du buffer sur la stack.
 	- Le 4e élément vaut `41414141`, donc notre buffer est à l’argument 4.
 - Vulnérabilité : format string permettant d’écrire via `%n`.
 

