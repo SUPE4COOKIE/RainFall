@@ -11,6 +11,7 @@
 - Analyse dynamique :
 	- Crash avec un motif (`AAAABBBB[...]FFFF`) permet de repérer l’offset de l’EIP.
 	- `dmesg` indique `0x42424242` (les `B`), ce qui confirme l’offset à 76.
+	- **Note sur l'offset :** En temps normal, on attendrait un offset de 80 (76 + 4 octets de l'EBP sauvegardé). L'absence de la sauvegarde de l'EBP indique une optimisation du compilateur (type `-fomit-frame-pointer` ou alignement spécifique), plaçant le buffer directement avant l'adresse de retour (EIP).
 - Vulnérabilité : overflow permettant d’écraser l’adresse de retour.
 
 ## 3) Exploitation & flag
